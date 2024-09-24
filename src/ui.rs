@@ -17,6 +17,13 @@ use std::{io::Stdout};
 
 use crate::deck::Deck;
 
+#[derive(PartialEq)]
+enum AppState {
+    ShowEnd,
+    ShowDeck,
+    Exit,
+}
+
 pub struct App {
     terminal: Terminal<CrosstermBackend<Stdout>>,
 
@@ -24,7 +31,9 @@ pub struct App {
 
     card_index: usize,
     show_front: bool,
-    run: bool,
+    state: AppState,
+
+    num_correct: i32,
 }
 
 impl App {
@@ -34,13 +43,29 @@ impl App {
             deck,
             card_index: 0,
             show_front: true,
-            run: true,
+            state: AppState::ShowDeck,
+            num_correct: 0,
         }
     }
 
     pub fn run(&mut self) {
         self.draw();
-        while self.run {
+        loop {
+            match self.state {
+                AppState::ShowDeck => {
+                    self.handle_input();
+                    self.draw();
+                }
+                AppState::ShowEnd => {
+                    self.handle_input();
+                    self.draw_end();
+                }
+                AppState::Exit => {
+                    break;
+                }
+            }
+        }
+        while self.state == AppState::ShowDeck {
             self.handle_input();
             self.draw();
         }
@@ -57,30 +82,61 @@ impl App {
             f.render_widget(display_text, f.area());
         });         
     }
+    fn draw_end(&mut self) {
+        let _ = self.terminal.draw(|f| {
+            let paragraph = Paragraph::new(format!("num correct: {}", self.num_correct)).alignment(Alignment::Center);
+            f.render_widget(paragraph, f.area());
+        });
+    }
 
     fn handle_input(&mut self) {
         if let Event::Key(key) = event::read().unwrap() {
+            // TODO: Make this not shit and also make it less exploitable
             match key.code {
+                KeyCode::Char('h') => {
+                    if self.show_front { return }
+                    self.increment(true);
+                }
+                KeyCode::Char('l') => {
+                    if self.show_front { return }
+                    self.num_correct += 1;
+                    self.increment(true);
+                }
                 KeyCode::Char('j') | KeyCode::Right => {// next
-                    if self.show_front {
-                        self.show_front = false;
-                    } else {
-                        self.show_front = true;
-                        self.card_index += 1;
-                    }
+                    if !self.show_front { return }
+                    self.increment(true)
                 }
                 KeyCode::Char('k') | KeyCode::Left => {// previous
-                    if self.show_front {
-                        self.show_front = false;
-                        self.card_index -= 1;
-                    } else {
-                        self.show_front = true;
-                    }
+                    self.increment(false)
                 }
                 KeyCode::Char('q') | KeyCode::Esc => {// exit app
-                    self.run = false;
+                    self.state = AppState::Exit;
                 }
                 _ => (),
+            }
+        }
+    }
+
+    // this is shit
+    fn increment(&mut self, forward: bool) {
+        // if reached the end of the deck
+        if forward && !self.show_front && self.card_index == self.deck.cards.len() - 1 {
+            self.state = AppState::ShowEnd;
+            return
+        }
+        if forward {
+            if self.show_front {
+                self.show_front = false;
+            } else {
+                self.show_front = true;
+                self.card_index += 1;
+            }
+        } else {
+            if self.show_front {
+                self.card_index -= 1;
+                self.show_front = false;
+            } else {
+                self.show_front = true;
             }
         }
     }
