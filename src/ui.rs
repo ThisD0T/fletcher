@@ -8,12 +8,12 @@ use ratatui::{
     layout::{Constraint, Layout, Direction, Constraint::Ratio, Alignment},
     style::{palette::tailwind::SLATE, Color, Modifier, Style},
     text::Text,
-    widgets::{Cell, ListItem, Row, Table, TableState, Paragraph},
+    widgets::{Cell, ListItem, Row, Table, TableState, Paragraph, block, Block},
     Terminal,
     Frame,
 };
 
-use std::{io::Stdout};
+use std::{fmt::write, io::Stdout};
 
 use crate::deck::Deck;
 
@@ -49,15 +49,15 @@ impl App {
     }
 
     pub fn run(&mut self) {
+        self.terminal.clear();
         self.draw();
         loop {
+            self.handle_input();
             match self.state {
                 AppState::ShowDeck => {
-                    self.handle_input();
                     self.draw();
                 }
                 AppState::ShowEnd => {
-                    self.handle_input();
                     self.draw_end();
                 }
                 AppState::Exit => {
@@ -73,13 +73,32 @@ impl App {
 
     fn draw(&mut self) {
         let _ = self.terminal.draw(|f| {
+            
+            let layout = Layout::vertical(
+                [Constraint::Min(3),
+                Constraint::Percentage(95),
+                Constraint::Min(3)]
+            );
+            let [head_area, body_area, _foot_area] = layout.areas(f.area());
+
+            // text to display
             let display_text: Paragraph = if self.show_front {
-                Paragraph::new(self.deck.cards[self.card_index].front.clone()).alignment(Alignment::Center)
+                let block = Block::bordered()
+                    .title("Card Title");
+                Paragraph::new(self.deck.cards[self.card_index].front.clone()).alignment(Alignment::Center).add_modifier(Modifier::BOLD).block(block)
             } else {
-                Paragraph::new(self.deck.cards[self.card_index].back.clone())
+                let block = Block::bordered()
+                    .title("Card Contents");
+                Paragraph::new(self.deck.cards[self.card_index].back.clone()).block(block)
             };
 
-            f.render_widget(display_text, f.area());
+
+            let correct_text = Paragraph::new(format!("{} correct", self.num_correct)).alignment(Alignment::Right);
+            let card_count = Paragraph::new(format!("{}/{} Cards complete", self.card_index, self.deck.cards.len())).alignment(Alignment::Left);
+
+            f.render_widget(display_text, body_area);
+            f.render_widget(correct_text, head_area);
+            f.render_widget(card_count, head_area);
         });         
     }
     fn draw_end(&mut self) {
@@ -120,7 +139,7 @@ impl App {
     // this is shit
     fn increment(&mut self, forward: bool) {
         // if reached the end of the deck
-        if forward && !self.show_front && self.card_index == self.deck.cards.len() - 1 {
+        if forward && !self.show_front && self.card_index + 1 == self.deck.cards.len() {
             self.state = AppState::ShowEnd;
             return
         }
@@ -140,4 +159,9 @@ impl App {
             }
         }
     }
+}
+
+fn calc_percentage(num1: &i32, num2: &i32) -> i32 {
+    if *num2 <= 0 { return 0 }
+    (num1 / num2) * 100
 }
