@@ -14,7 +14,9 @@ fn main() {
     // of card, etc.
     
     let mut deck = Deck::new();
-    deck.initialize();
+    if let Err(error) = deck.initialize() {
+        panic!("ERROR: {}", error);
+    }
     let mut app = App::new(deck);
     app.run();
     ratatui::restore();

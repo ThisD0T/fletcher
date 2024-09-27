@@ -20,8 +20,13 @@ impl Deck {
         }
     }
 
-    pub fn initialize(&mut self) {
+    pub fn initialize(&mut self) -> Result<()> {
         self.visit_dirs(&current_dir().unwrap());
+        if self.cards.len() == 0 {
+            Err(Error::other("no md files found"))
+        } else {
+            Ok(())
+        }
     }
 
     pub fn test_print(&self) {
