@@ -19,5 +19,4 @@ fn main() {
     deck.initialize();
     let mut app = App::new(deck);
     app.run();
-    ratatui::restore();
 }
