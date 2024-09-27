@@ -34,6 +34,7 @@ pub struct App {
     state: AppState,
 
     num_correct: i32,
+    incorrect_indexes: Vec<usize>,
 }
 
 impl App {
@@ -45,6 +46,7 @@ impl App {
             show_front: true,
             state: AppState::ShowDeck,
             num_correct: 0,
+            incorrect_indexes: Vec::new(),
         }
     }
 
@@ -79,7 +81,7 @@ impl App {
                 Constraint::Percentage(95),
                 Constraint::Min(3)]
             );
-            let [head_area, body_area, _foot_area] = layout.areas(f.area());
+            let [head_area, body_area, foot_area] = layout.areas(f.area());
 
             // text to display
             let display_text: Paragraph = if self.show_front {
@@ -95,16 +97,27 @@ impl App {
 
             let correct_text = Paragraph::new(format!("{} correct", self.num_correct)).alignment(Alignment::Right);
             let card_count = Paragraph::new(format!("{}/{} Cards complete", self.card_index, self.deck.cards.len())).alignment(Alignment::Left);
+            let help_info = Paragraph::new("j for next, h for incorrect, l for correct").alignment(Alignment::Center);
 
             f.render_widget(display_text, body_area);
             f.render_widget(correct_text, head_area);
             f.render_widget(card_count, head_area);
+            f.render_widget(help_info, foot_area);
         });         
     }
     fn draw_end(&mut self) {
         let _ = self.terminal.draw(|f| {
-            let paragraph = Paragraph::new(format!("num correct: {}", self.num_correct)).alignment(Alignment::Center);
+            let block = Block::bordered().title("q to quit").title_alignment(Alignment::Center);
+            let paragraph = Paragraph::new(format!("num correct: {}", self.num_correct)).alignment(Alignment::Center).add_modifier(Modifier::BOLD);
+
+            let mut incorrect_string: String = String::new(); 
+            self.incorrect_indexes.iter().enumerate().for_each(|(i, index)| {
+                incorrect_string += (format!("\nCard {}, title: {}", index, self.deck.cards[*index].front)).as_str()
+            });
+            let incorrect_list = Paragraph::new(incorrect_string);
+
             f.render_widget(paragraph, f.area());
+            f.render_widget(incorrect_list, f.area());
         });
     }
 
@@ -112,21 +125,19 @@ impl App {
         if let Event::Key(key) = event::read().unwrap() {
             // TODO: Make this not shit and also make it less exploitable
             match key.code {
-                KeyCode::Char('h') => {
+                KeyCode::Char('h') => {// incrrect answer
                     if self.show_front { return }
-                    self.increment(true);
+                    self.incorrect_indexes.push(self.card_index);
+                    self.increment();
                 }
-                KeyCode::Char('l') => {
+                KeyCode::Char('l') => {// correct answer
                     if self.show_front { return }
                     self.num_correct += 1;
-                    self.increment(true);
+                    self.increment();
                 }
                 KeyCode::Char('j') | KeyCode::Right => {// next
                     if !self.show_front { return }
-                    self.increment(true)
-                }
-                KeyCode::Char('k') | KeyCode::Left => {// previous
-                    self.increment(false)
+                    self.increment()
                 }
                 KeyCode::Char('q') | KeyCode::Esc => {// exit app
                     self.state = AppState::Exit;
@@ -137,26 +148,17 @@ impl App {
     }
 
     // this is shit
-    fn increment(&mut self, forward: bool) {
+    fn increment(&mut self) {
         // if reached the end of the deck
-        if forward && !self.show_front && self.card_index + 1 == self.deck.cards.len() {
+        if !self.show_front && self.card_index + 1 == self.deck.cards.len() {
             self.state = AppState::ShowEnd;
             return
         }
-        if forward {
-            if self.show_front {
-                self.show_front = false;
-            } else {
-                self.show_front = true;
-                self.card_index += 1;
-            }
+        if self.show_front {
+            self.show_front = false;
         } else {
-            if self.show_front {
-                self.card_index -= 1;
-                self.show_front = false;
-            } else {
-                self.show_front = true;
-            }
+            self.show_front = true;
+            self.card_index += 1;
         }
     }
 }
