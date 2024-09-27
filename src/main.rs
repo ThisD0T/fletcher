@@ -3,8 +3,6 @@ mod ui;
 use deck::*;
 use ui::*;
 
-use std::path::Path;
-
 fn main() {
     // open current directory
     // iterate through all files recursively

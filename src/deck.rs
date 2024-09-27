@@ -1,8 +1,7 @@
 use std::env::current_dir;
-use std::path::{PathBuf, Path};
+use std::path::Path;
 use std::fs::{read_to_string, read_dir};
 use std::io::{Result, ErrorKind, Error};
-use std::ffi::OsString;
 
 pub struct Card {
     pub front: String,

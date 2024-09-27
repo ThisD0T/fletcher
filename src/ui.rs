@@ -1,19 +1,15 @@
-use crossterm::{
-    event::{self, Event, KeyCode},
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
+use crossterm::event::{self, Event, KeyCode};
 use ratatui::style::Stylize;
 use ratatui::{
+    prelude::Alignment,
     backend::CrosstermBackend,
-    layout::{Constraint, Layout, Direction, Constraint::Ratio, Alignment},
-    style::{palette::tailwind::SLATE, Color, Modifier, Style},
-    text::Text,
-    widgets::{Cell, ListItem, Row, Table, TableState, Paragraph, block, Block},
+    layout::{Constraint, Layout},
+    style::Modifier,
+    widgets::{Paragraph, Block},
     Terminal,
-    Frame,
 };
 
-use std::{fmt::write, io::Stdout};
+use std::io::Stdout;
 
 use crate::deck::Deck;
 
@@ -51,7 +47,7 @@ impl App {
     }
 
     pub fn run(&mut self) {
-        self.terminal.clear();
+        let _ = self.terminal.clear();
         self.draw();
         loop {
             self.handle_input();
@@ -107,23 +103,21 @@ impl App {
     }
     fn draw_end(&mut self) {
         let _ = self.terminal.draw(|f| {
-            let block = Block::bordered().title("q to quit").title_alignment(Alignment::Center);
-            let paragraph = Paragraph::new(format!("num correct: {}", self.num_correct)).alignment(Alignment::Center).add_modifier(Modifier::BOLD);
+            let block = Block::bordered().title(format!("{} wrong ... q to quit", self.num_correct)).title_alignment(Alignment::Center);
 
             let mut incorrect_string: String = String::new(); 
-            self.incorrect_indexes.iter().enumerate().for_each(|(i, index)| {
+            self.incorrect_indexes.iter().for_each(|index| {
                 incorrect_string += (format!("\nCard {}, title: {}", index, self.deck.cards[*index].front)).as_str()
             });
-            let incorrect_list = Paragraph::new(incorrect_string);
+            let incorrect_list = Paragraph::new(incorrect_string).block(block);
 
-            f.render_widget(paragraph, f.area());
             f.render_widget(incorrect_list, f.area());
         });
     }
 
     fn handle_input(&mut self) {
         if let Event::Key(key) = event::read().unwrap() {
-            // TODO: Make this not shit and also make it less exploitable
+            // TODO: Make this not shit
             match key.code {
                 KeyCode::Char('h') => {// incrrect answer
                     if self.show_front { return }
@@ -161,9 +155,4 @@ impl App {
             self.card_index += 1;
         }
     }
-}
-
-fn calc_percentage(num1: &i32, num2: &i32) -> i32 {
-    if *num2 <= 0 { return 0 }
-    (num1 / num2) * 100
 }
