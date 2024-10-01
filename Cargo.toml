@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 ratatui = { version = "0.28.1", features = [ "crossterm" ]}
 crossterm = "0.25"
+rand = "0.8.5"

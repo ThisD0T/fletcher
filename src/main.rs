@@ -17,6 +17,7 @@ fn main() {
     if let Err(error) = deck.initialize() {
         panic!("ERROR: {}", error);
     }
+    deck.shuffle();
     let mut app = App::new(deck);
     app.run();
     ratatui::restore();

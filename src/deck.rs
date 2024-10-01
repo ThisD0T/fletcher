@@ -2,6 +2,7 @@ use std::env::current_dir;
 use std::path::Path;
 use std::fs::{read_to_string, read_dir};
 use std::io::{Result, ErrorKind, Error};
+use rand::{seq::SliceRandom, thread_rng};
 
 pub struct Card {
     pub front: String,
@@ -27,6 +28,10 @@ impl Deck {
         } else {
             Ok(())
         }
+    }
+
+    pub fn shuffle(&mut self) {
+        self.cards.shuffle(&mut thread_rng());
     }
 
     pub fn test_print(&self) {
