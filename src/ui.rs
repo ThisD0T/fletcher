@@ -103,7 +103,7 @@ impl App {
     }
     fn draw_end(&mut self) {
         let _ = self.terminal.draw(|f| {
-            let block = Block::bordered().title(format!("{} wrong ... q to quit", self.num_correct)).title_alignment(Alignment::Center);
+            let block = Block::bordered().title(format!("{} wrong ... q to quit", self.deck.cards.len() as i32 - self.num_correct)).title_alignment(Alignment::Center);
 
             let mut incorrect_string: String = String::new(); 
             self.incorrect_indexes.iter().for_each(|index| {
