@@ -100,7 +100,6 @@ fn get_parent_dir(path: &Path) -> Option<&str>  {
     if let Some(dir) = path.parent().unwrap().to_str() {
         // get the '/' at the end of the path and extract the parent directory
         for (i, c) in dir.chars().rev().enumerate() {
-            println!("{}", c);
             if c == '/' {
                 let (_, end) = dir.split_at(dir.len() - i);
                 return Some(end)
