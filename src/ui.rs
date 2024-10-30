@@ -120,12 +120,12 @@ impl App {
             // TODO: Make this not shit
             match key.code {
                 KeyCode::Char('h') => {// incrrect answer
-                    if self.show_front { return }
+                    if self.show_front || self.state == AppState::ShowEnd { return }
                     self.incorrect_indexes.push(self.card_index);
                     self.increment();
                 }
                 KeyCode::Char('l') => {// correct answer
-                    if self.show_front { return }
+                    if self.show_front || self.state == AppState::ShowEnd { return }
                     self.num_correct += 1;
                     self.increment();
                 }

@@ -79,15 +79,34 @@ fn extension_check(path: &Path, pattern: &'static str) -> bool {
 
 pub fn file_to_card(path: &Path) -> Result<Card> {
     
-    let front = if let Some(v) = path.file_name().unwrap().to_str() {
-        v
+    let front = if let Some(v) = path.file_stem().unwrap().to_str() {
+        if let Some(parent) = get_parent_dir(path) {
+            parent.to_owned() + "/" + v
+        } else {
+            "".to_owned()
+        }
     } else {
         return Err(Error::new(ErrorKind::Other, "Shit"))
     };
     let back = read_to_string(path)?;
 
     Ok(Card {
-        front: front.to_owned(),
+        front,
         back,
     })
+}
+
+fn get_parent_dir(path: &Path) -> Option<&str>  {
+    if let Some(dir) = path.parent().unwrap().to_str() {
+        // get the '/' at the end of the path and extract the parent directory
+        for (i, c) in dir.chars().rev().enumerate() {
+            println!("{}", c);
+            if c == '/' {
+                let (_, end) = dir.split_at(dir.len() - i);
+                return Some(end)
+            }
+        }
+        return None
+    }
+    None
 }
